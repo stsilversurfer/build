@@ -19,7 +19,7 @@ new file mode 100644
 index 000000000000..ac5e6b854e4c
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1G.dts
-@@ -0,0 +1,360 @@
+@@ -0,0 +1,361 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -290,9 +290,10 @@ index 000000000000..ac5e6b854e4c
 +};
 +
 +&reg_eldo1 {
++	regulator-always-on;
 +	regulator-min-microvolt = <1800000>;
 +	regulator-max-microvolt = <1800000>;
-+	regulator-name = "cpvdd";
++	regulator-name = "vcc-emmc";
 +};
 +
 +&reg_eldo2 {

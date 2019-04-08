@@ -129,7 +129,7 @@ index 000000000000..ac5e6b854e4c
 +};
 +
 +&hdmi {
-+	hvcc-supply = <&reg_vcc_sys>;
++	hvcc-supply = <&reg_dldo1>;
 +	status = "okay";
 +};
 +

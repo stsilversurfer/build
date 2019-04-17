@@ -1,5 +1,5 @@
 # A13 single core 512Mb SoM
-BOARD_NAME="SoM A13"
+BOARD_NAME="SOM-A13"
 BOARDFAMILY="sun5i"
 BOOTCONFIG="A13-OLinuXinoM_defconfig"
 MODULES="gpio_sunxi spi_sunxi"

@@ -10,7 +10,7 @@
 # common options
 # daily beta build contains date in subrevision
 if [[ $BETA == yes && -z $SUBREVISION ]]; then SUBREVISION="."$(date --date="tomorrow" +"%y%m%d"); fi
-REVISION="5.78$SUBREVISION" # all boards have same revision
+REVISION="5.79$SUBREVISION" # all boards have same revision
 ROOTPWD="1234" # Must be changed @first login
 [[ -z $MAINTAINER ]] && MAINTAINER="Igor Pecovnik" # deb signature
 [[ -z $MAINTAINERMAIL ]] && MAINTAINERMAIL="igor.pecovnik@****l.com" # deb signature
@@ -203,6 +203,17 @@ case $RELEASE in
 		PACKAGE_LIST_DESKTOP+=" xserver-xorg-input-all paprefs dbus-x11"
 		PACKAGE_LIST_DESKTOP_RECOMMENDS+=" chromium-browser system-config-printer-common system-config-printer language-selector-gnome"
 	;;
+
+	buster)
+                DEBOOTSTRAP_COMPONENTS="main"
+                PACKAGE_LIST_RELEASE="man-db less kbd net-tools netcat-openbsd gnupg2 dirmngr"
+                PACKAGE_LIST_DESKTOP+=" paman libgcr-3-common gcj-jre-headless paprefs dbus-x11"
+                PACKAGE_LIST_DESKTOP_RECOMMENDS+=" chromium system-config-printer-common system-config-printer"
+
+		# temp disable
+		PACKAGE_LIST_ADDITIONAL="${PACKAGE_LIST_ADDITIONAL/armbian-firmware /}"
+		PACKAGE_LIST_ADDITIONAL="${PACKAGE_LIST_ADDITIONAL/sysbench /}"
+        ;;
 
 esac
 

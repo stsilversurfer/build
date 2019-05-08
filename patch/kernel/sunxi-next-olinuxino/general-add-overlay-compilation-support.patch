@@ -1,22 +1,16 @@
-diff --git a/arch/arm/Makefile b/arch/arm/Makefile
-index 65f4e2a4..9eb2043c 100644
---- a/arch/arm/Makefile
-+++ b/arch/arm/Makefile
-@@ -339,6 +339,12 @@ $(INSTALL_TARGETS):
- %.dtb: | scripts
- 	$(Q)$(MAKE) $(build)=$(boot)/dts MACHINE=$(MACHINE) $(boot)/dts/$@
+From 4e3f3de06f4f88af1da23f050802202f105615fd Mon Sep 17 00:00:00 2001
+From: Dimitar Gamishev <gamishev@gmail.com>
+Date: Wed, 27 Mar 2019 11:46:47 +0200
+Subject: [PATCH] Fixes form dtb compilation
 
-+%.dtbo: | scripts
-+	$(Q)$(MAKE) $(build)=$(boot)/dts MACHINE=$(MACHINE) $(boot)/dts/$@
-+
-+%.scr: | scripts
-+	$(Q)$(MAKE) $(build)=$(boot)/dts ARCH=$(ARCH) $(boot)/dts/$@
-+
- PHONY += dtbs dtbs_install
+---
+ arch/arm/boot/.gitignore |  2 ++
+ scripts/Makefile.dtbinst | 16 ++++++++++++++--
+ scripts/Makefile.lib     | 20 ++++++++++++++++++++
+ 3 files changed, 36 insertions(+), 2 deletions(-)
 
- dtbs: prepare scripts
 diff --git a/arch/arm/boot/.gitignore b/arch/arm/boot/.gitignore
-index 3c79f859..4e5c1d59 100644
+index ce1c5ff746e7..4e5c1d59616f 100644
 --- a/arch/arm/boot/.gitignore
 +++ b/arch/arm/boot/.gitignore
 @@ -3,3 +3,5 @@ zImage
@@ -25,42 +19,24 @@ index 3c79f859..4e5c1d59 100644
  uImage
 +*.dtb*
 +*.scr
-\ No newline at end of file
-diff --git a/arch/arm64/Makefile b/arch/arm64/Makefile
-index f839ecd9..9788f16d 100644
---- a/arch/arm64/Makefile
-+++ b/arch/arm64/Makefile
-@@ -121,6 +121,12 @@ zinstall install:
- %.dtb: scripts
- 	$(Q)$(MAKE) $(build)=$(boot)/dts $(boot)/dts/$@
-
-+%.dtbo: | scripts
-+	$(Q)$(MAKE) $(build)=$(boot)/dts MACHINE=$(MACHINE) $(boot)/dts/$@
-+
-+%.scr: | scripts
-+	$(Q)$(MAKE) $(build)=$(boot)/dts ARCH=$(ARCH) $(boot)/dts/$@
-+
- PHONY += dtbs dtbs_install
-
- dtbs: prepare scripts
 diff --git a/scripts/Makefile.dtbinst b/scripts/Makefile.dtbinst
-index 34614a48..8a8313d6 100644
+index 7301ab5e2e06..a08f9bee3e55 100644
 --- a/scripts/Makefile.dtbinst
 +++ b/scripts/Makefile.dtbinst
 @@ -20,6 +20,9 @@ include scripts/Kbuild.include
  include $(src)/Makefile
-
+ 
  dtbinst-files	:= $(sort $(dtb-y) $(if $(CONFIG_OF_ALL_DTBS), $(dtb-)))
 +dtboinst-files	:= $(dtbo-y)
 +script-files	:= $(scr-y)
 +readme-files	:= $(dtbotxt-y)
  dtbinst-dirs	:= $(subdir-y) $(subdir-m)
-
+ 
  # Helper targets for Installing DTBs into the boot directory
-@@ -32,10 +35,19 @@ install-dir = $(patsubst $(dtbinst-root)%,$(INSTALL_DTBS_PATH)%,$(obj))
+@@ -31,10 +34,19 @@ install-dir = $(patsubst $(dtbinst_root)%,$(INSTALL_DTBS_PATH)%,$(obj))
  $(dtbinst-files): %.dtb: $(obj)/%.dtb
  	$(call cmd,dtb_install,$(install-dir))
-
+ 
 +$(dtboinst-files): %.dtbo: $(obj)/%.dtbo
 +	$(call cmd,dtb_install,$(install-dir))
 +
@@ -72,31 +48,32 @@ index 34614a48..8a8313d6 100644
 +
  $(dtbinst-dirs):
  	$(Q)$(MAKE) $(dtbinst)=$(obj)/$@
-
+ 
 -PHONY += $(dtbinst-files) $(dtbinst-dirs)
 -__dtbs_install: $(dtbinst-files) $(dtbinst-dirs)
 +PHONY += $(dtbinst-files) $(dtboinst-files) $(script-files) $(readme-files) $(dtbinst-dirs)
 +__dtbs_install: $(dtbinst-files) $(dtboinst-files) $(script-files) $(readme-files) $(dtbinst-dirs)
-
+ 
  .PHONY: $(PHONY)
 diff --git a/scripts/Makefile.lib b/scripts/Makefile.lib
-index 58c05e5d..2b95dda9 100644
+index d41f37596276..041a7c56f5eb 100644
 --- a/scripts/Makefile.lib
 +++ b/scripts/Makefile.lib
-@@ -278,6 +278,9 @@ cmd_gzip = (cat $(filter-out FORCE,$^) | gzip -n -f -9 > $@) || \
+@@ -250,6 +250,10 @@ quiet_cmd_gzip = GZIP    $@
+ # DTC
  # ---------------------------------------------------------------------------
  DTC ?= $(objtree)/scripts/dtc/dtc
-
++           
 +# Overlay support
 +DTC_FLAGS += -@ -Wno-unit_address_format -Wno-simple_bus_reg
 +
+ 
  # Disable noisy checks by default
- ifeq ($(KBUILD_ENABLE_EXTRA_GCC_CHECKS),)
- DTC_FLAGS += -Wno-unit_address_vs_reg \
-@@ -324,6 +327,23 @@ cmd_dtc = mkdir -p $(dir ${dtc-tmp}) ; \
- $(obj)/%.dtb: $(src)/%.dts FORCE
- 	$(call if_changed_dep,dtc)
-
+ ifeq ($(findstring 1,$(KBUILD_ENABLE_EXTRA_GCC_CHECKS)),)
+@@ -313,6 +317,22 @@ endef
+ 
+ $(obj)/%.dt.yaml: $(src)/%.dts $(DTC) $(DT_TMP_SCHEMA) FORCE
+ 	$(call if_changed_rule,dtc_dt_yaml)
 +quiet_cmd_dtco = DTCO    $@
 +cmd_dtco = mkdir -p $(dir ${dtc-tmp}) ; \
 +	$(CPP) $(dtc_cpp_flags) -x assembler-with-cpp -o $(dtc-tmp) $< ; \
@@ -113,7 +90,9 @@ index 58c05e5d..2b95dda9 100644
 +
 +$(obj)/%.scr: $(src)/%.scr-cmd FORCE
 +	$(call if_changed,scr)
-+
+ 
  dtc-tmp = $(subst $(comma),_,$(dot-target).dts.tmp)
+ 
+-- 
+2.20.1
 
- # Bzip2

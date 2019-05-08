@@ -1,0 +1,9 @@
+[Unit]
+Description=LCD-OLinuXino RTP calibrabion
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /usr/bin/olinuxino_ts.sh
+
+[Install]
+WantedBy=graphical.target

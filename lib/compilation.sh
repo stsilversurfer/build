@@ -57,10 +57,12 @@ compile_atf()
 	# create patch for manual source changes
 	[[ $CREATE_PATCHES == yes ]] && userpatch_create "atf"
 
+	echo -e "\n\t==  atf  ==\n" >>$DEST/debug/compilation.log
 	# ENABLE_BACKTRACE="0" has been added to workaround a regression in ATF.
 	# Check: https://github.com/armbian/build/issues/1157
 	eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$toolchain2:$PATH \
-		'make ENABLE_BACKTRACE="0" $target_make $CTHREADS CROSS_COMPILE="$CCACHE $ATF_COMPILER"' 2>&1 \
+		'make ENABLE_BACKTRACE="0" $target_make $CTHREADS \
+		CROSS_COMPILE="$CCACHE $ATF_COMPILER"' 2>>$DEST/debug/compilation.log \
 		${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
 		${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Compiling ATF..." $TTY_Y $TTY_X'} \
 		${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
@@ -142,15 +144,17 @@ compile_uboot()
 			cp -Rv $atftempdir/*.bin .
 		fi
 
+		echo -e "\n\t== u-boot ==\n" >>$DEST/debug/compilation.log
 		eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
-			'make $CTHREADS $BOOTCONFIG CROSS_COMPILE="$CCACHE $UBOOT_COMPILER"' 2>&1 \
+			'make $CTHREADS $BOOTCONFIG \
+			CROSS_COMPILE="$CCACHE $UBOOT_COMPILER"' 2>>$DEST/debug/compilation.log \
 			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
 		# armbian specifics u-boot settings
 		[[ -f .config ]] && sed -i 's/CONFIG_LOCALVERSION=""/CONFIG_LOCALVERSION="-armbian"/g' .config
 		[[ -f .config ]] && sed -i 's/CONFIG_LOCALVERSION_AUTO=.*/# CONFIG_LOCALVERSION_AUTO is not set/g' .config
-		if [[ $BOOTBRANCH == "tag:v2018".* ]]; then
+		if [[ $BOOTBRANCH =~ ^tag:v201[8-9](.*) ]]; then
 			[[ -f .config ]] && sed -i 's/^.*CONFIG_ENV_IS_IN_FAT.*/# CONFIG_ENV_IS_IN_FAT is not set/g' .config
 			[[ -f .config ]] && sed -i 's/^.*CONFIG_ENV_IS_IN_EXT4.*/CONFIG_ENV_IS_IN_EXT4=y/g' .config
 			[[ -f .config ]] && sed -i 's/^.*CONFIG_ENV_IS_IN_MMC.*/# CONFIG_ENV_IS_IN_MMC is not set/g' .config
@@ -167,7 +171,8 @@ compile_uboot()
 		[[ -n $BOOTDELAY ]] && sed -i "s/^CONFIG_BOOTDELAY=.*/CONFIG_BOOTDELAY=${BOOTDELAY}/" .config || [[ -f .config ]] && echo "CONFIG_BOOTDELAY=${BOOTDELAY}" >> .config
 
 		eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
-			'make $target_make $CTHREADS CROSS_COMPILE="$CCACHE $UBOOT_COMPILER"' 2>&1 \
+			'make $target_make $CTHREADS \
+			CROSS_COMPILE="$CCACHE $UBOOT_COMPILER"' 2>>$DEST/debug/compilation.log \
 			${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
 			${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Compiling u-boot..." $TTY_Y $TTY_X'} \
 			${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
@@ -264,8 +269,10 @@ compile_kernel()
 	# add WireGuard
 	if linux-version compare $version ge 3.14 && [ "$WIREGUARD" == yes ]; then
 			display_alert "Adding" "WireGuard" "info"
-			rm -r $SRC/cache/sources/$LINUXSOURCEDIR/net/wireguard
-			$SRC/cache/sources/wireguard/contrib/kernel-tree/jury-rig.sh $SRC/cache/sources/$LINUXSOURCEDIR
+			rm -rf $SRC/cache/sources/$LINUXSOURCEDIR/net/wireguard
+			cp -R $SRC/cache/sources/wireguard/src/ $SRC/cache/sources/$LINUXSOURCEDIR/net/wireguard
+			sed -i "/^obj-\\\$(CONFIG_NETFILTER).*+=/a obj-\$(CONFIG_WIREGUARD) += wireguard/" "$SRC/cache/sources/$LINUXSOURCEDIR/net/Makefile"
+			sed -i "/^if INET\$/a source \"net/wireguard/Kconfig\"" "$SRC/cache/sources/$LINUXSOURCEDIR/net/Kconfig"
 			# remove duplicates
 			[[ $(cat $SRC/cache/sources/$LINUXSOURCEDIR/net/Makefile | grep wireguard | wc -l) -gt 1 ]] && \
 			sed -i '0,/wireguard/{/wireguard/d;}' $SRC/cache/sources/$LINUXSOURCEDIR/net/Makefile
@@ -376,11 +383,15 @@ compile_kernel()
 
 	xz < .config > $sources_pkg_dir/usr/src/${LINUXCONFIG}_${version}_${REVISION}_config.xz
 
+	echo -e "\n\t== kernel ==\n" >>$DEST/debug/compilation.log
 	eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
-		'make $CTHREADS ARCH=$ARCHITECTURE CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" LOCALVERSION="-$LINUXFAMILY" \
-		$KERNEL_IMAGE_TYPE modules dtbs 2>&1' \
+		'make $CTHREADS ARCH=$ARCHITECTURE \
+		CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" \
+		LOCALVERSION="-$LINUXFAMILY" \
+		$KERNEL_IMAGE_TYPE modules dtbs 2>>$DEST/debug/compilation.log' \
 		${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
-		${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Compiling kernel..." $TTY_Y $TTY_X'} \
+		${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" \
+		--progressbox "Compiling kernel..." $TTY_Y $TTY_X'} \
 		${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
 
 	if [[ ${PIPESTATUS[0]} -ne 0 || ! -f arch/$ARCHITECTURE/boot/$KERNEL_IMAGE_TYPE ]]; then
@@ -397,9 +408,16 @@ compile_kernel()
 	display_alert "Creating packages"
 
 	# produce deb packages: image, headers, firmware, dtb
+	echo -e "\n\t== deb packages: image, headers, firmware, dtb ==\n" >>$DEST/debug/compilation.log
 	eval CCACHE_BASEDIR="$(pwd)" env PATH=$toolchain:$PATH \
-		'make -j1 $kernel_packing KDEB_PKGVERSION=$REVISION LOCALVERSION="-${LINUXFAMILY}" \
-		KBUILD_DEBARCH=$ARCH ARCH=$ARCHITECTURE DEBFULLNAME="$MAINTAINER" DEBEMAIL="$MAINTAINERMAIL" CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" 2>&1' \
+		'make -j1 $kernel_packing \
+		KDEB_PKGVERSION=$REVISION \
+		LOCALVERSION="-${LINUXFAMILY}" \
+		KBUILD_DEBARCH=$ARCH \
+		ARCH=$ARCHITECTURE \
+		DEBFULLNAME="$MAINTAINER" \
+		DEBEMAIL="$MAINTAINERMAIL" \
+		CROSS_COMPILE="$CCACHE $KERNEL_COMPILER" 2>>$DEST/debug/compilation.log' \
 		${PROGRESS_LOG_TO_FILE:+' | tee -a $DEST/debug/compilation.log'} \
 		${OUTPUT_DIALOG:+' | dialog --backtitle "$backtitle" --progressbox "Creating kernel packages..." $TTY_Y $TTY_X'} \
 		${OUTPUT_VERYSILENT:+' >/dev/null 2>/dev/null'}
@@ -498,6 +516,14 @@ find_toolchain()
 		fi
 	done
 	echo "$toolchain"
+	# logging a stack of used compilers.
+	if [[ -f $DEST/debug/compiler.log ]]; then
+		if ! grep -q "$toolchain" $DEST/debug/compiler.log; then
+			echo "$toolchain" >> $DEST/debug/compiler.log;
+		fi
+	else
+			echo "$toolchain" >> $DEST/debug/compiler.log;
+	fi
 }
 
 # advanced_patch <dest> <family> <board> <target> <branch> <description>

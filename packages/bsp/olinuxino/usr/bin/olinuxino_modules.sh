@@ -19,7 +19,7 @@ case "$1" in
 		esac
 
 		# Load modules depending on lcd type
-		if [[ -e '/proc/device-tree/soc@1c00000/rtp@1c25000/allwinner,ts-attached' ]]; then
+		if [[ -e '/proc/device-tree/soc/rtp@1c25000/allwinner,ts-attached' ]]; then
 			rmmod sun4i_gpadc_iio sun4i_gpadc sun4i_ts 2>/dev/null
 			modprobe sun4i_ts || exit $?
 		fi

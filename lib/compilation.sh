@@ -288,6 +288,59 @@ compile_kernel()
 	# build 3rd party drivers
 	compilation_prepare
 
+	# add drivers for Realtek 8811, 8812, 8814 and 8821 chipsets
+	if linux-version compare $version ge 3.14 && [ "$RTL8812AU" == yes ]; then
+		display_alert "Adding" "Wireless drivers for Realtek 8811, 8812, 8814 and 8821 chipsets" "info"
+		rm -rf $SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/rtl8812au
+		mkdir -p $SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/rtl8812au/
+		cp -R $SRC/cache/sources/rtl8812au/{core,hal,include,os_dep,platform,modules.order} $SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/rtl8812au
+
+		# Makefile
+		cp $SRC/cache/sources/rtl8812au/Makefile $SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/rtl8812au/Makefile
+		cp $SRC/cache/sources/rtl8812au/Kconfig $SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/rtl8812au/Kconfig
+
+		# Adjust path
+		sed -i 's/include $(TopDIR)\/hal\/phydm\/phydm.mk/include $(TopDIR)\/drivers\/net\/wireless\/rtl8812au\/hal\/phydm\/phydm.mk/' \
+		$SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/rtl8812au/Makefile
+
+		# Add to section Makefile
+		sed -i '/obj-$(CONFIG_.*ATMEL).*/a obj-$(CONFIG_RTL8812AU) += rtl8812au/' \
+		$SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/Makefile
+		sed -i '/source "drivers\/net\/wireless\/ti\/Kconfig"/a source "drivers\/net\/wireless\/rtl8812au\/Kconfig"' \
+		$SRC/cache/sources/$LINUXSOURCEDIR/drivers/net/wireless/Kconfig
+	fi
+
+	# add sunxi-mali
+	if [[ "$SUNXI_MALI" == yes ]]; then
+		display_alert "Adding" "Mali drivers for Allwinner SoC" "info"
+
+		cd $SRC/cache/sources/sunxi-mali
+
+		# Cleanup
+		git reset --hard HEAD > /dev/null 2>&1
+		git clean -fd  > /dev/null 2>&1
+
+		# Patch sources
+		# KDIR=$SRC/cache/sources/$LINUXSOURCEDIR ARCH=$ARCHITECTURE CROSS_COMPILE=$KERNEL_COMPILER
+		./build.sh -r r6p2 -a >>$DEST/debug/compilation.log 2>&1
+		if [[ $? -ne 0 ]]; then
+			exit_with_error "Failed to patch sunxi-mali" "@host"
+		fi
+
+		# Modify default values
+		sed -i "s/USING_DEVFREQ ?= 0/USING_DEVFREQ ?= 1/g" r6p2/src/devicedrv/mali/Makefile
+		sed -i "s/CONFIG_ARCH_EXYNOS4/CONFIG_ARCH_SUNXI/g" r6p2/src/devicedrv/mali/Kbuild
+		sed -i "s/export MALI_PLATFORM=exynos4/export MALI_PLATFORM=sunxi/g" r6p2/src/devicedrv/mali/Kbuild
+		cd - > /dev/null
+
+		# Copy sources to kernel tree
+		cp -rf $SRC/cache/sources/sunxi-mali/r6p2/src/devicedrv/mali $SRC/cache/sources/$LINUXSOURCEDIR/drivers/gpu/
+
+		# Add mali path
+		sed -i "s/obj-y.*/obj-y                   += drm\/ vga\/ mali\//g" drivers/gpu/Makefile
+		sed -i "/source \"drivers\/gpu\/vga\/Kconfig\"/a source \"drivers\/gpu\/mali\/Kconfig\"" drivers/video/Kconfig
+	fi
+
 	# create linux-source package - with already patched sources
 	local sources_pkg_dir=$SRC/.tmp/${CHOSEN_KSRC}_${REVISION}_all
 	rm -rf ${sources_pkg_dir}

@@ -51,14 +51,7 @@ spicheck=$(grep 'mtd' /proc/partitions | awk '{print $NF}')
 
 # OLinuXino-A20 support both SPI and NAND as MTD devices
 if [[ $BOARD == olinuxino-a20 ]] && [[ $BRANCH == next ]]; then
-	spicheck=()
-
-	# Store all related u-boot partitions
-	for mtd in $(ls /dev/mtd? 2>/dev/null); do
-		if [[ $(mtdinfo $mtd | grep "Name:" | awk '{print $2}') == "SPI.u-boot"* ]]; then
-			spicheck+=($(cut -d'/' -f3 <<< $mtd))
-		fi
-	done
+	spicheck=($(cat /proc/mtd | grep "SPI.u-boot" | cut -d ':' -f1))
 fi
 
 # define makefs and mount options

@@ -1,5 +1,5 @@
 diff --git a/arch/arm64/boot/dts/allwinner/Makefile b/arch/arm64/boot/dts/allwinner/Makefile
-index 0b0917111099..4c00b4c20b17 100644
+index 0b0917111..4c00b4c20 100644
 --- a/arch/arm64/boot/dts/allwinner/Makefile
 +++ b/arch/arm64/boot/dts/allwinner/Makefile
 @@ -3,6 +3,11 @@ dtb-$(CONFIG_ARCH_SUNXI) += sun50i-a64-amarula-relic.dtb
@@ -16,7 +16,7 @@ index 0b0917111099..4c00b4c20b17 100644
  dtb-$(CONFIG_ARCH_SUNXI) += sun50i-a64-pine64-plus.dtb sun50i-a64-pine64.dtb
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1G.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1G.dts
 new file mode 100644
-index 000000000000..ac5e6b854e4c
+index 000000000..d48ed65de
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1G.dts
 @@ -0,0 +1,362 @@
@@ -34,7 +34,7 @@ index 000000000000..ac5e6b854e4c
 +
 +/ {
 +	model = "Olimex A64-Olinuxino-1G";
-+	compatible = "olimex,a64-olinuxino", "allwinner,sun50i-a64";
++	compatible = "olimex,a64-olinuxino-1g", "allwinner,sun50i-a64";
 +
 +	aliases {
 +		ethernet0 = &emac;
@@ -384,10 +384,10 @@ index 000000000000..ac5e6b854e4c
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge16GW.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge16GW.dts
 new file mode 100644
-index 000000000000..2849a00fe576
+index 000000000..ba8aafeda
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge16GW.dts
-@@ -0,0 +1,13 @@
+@@ -0,0 +1,19 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -400,13 +400,19 @@ index 000000000000..2849a00fe576
 +
 +/ {
 +	model = "Olimex A64-Olinuxino-1Ge16GW";
++	compatible = "olimex,a64-olinuxino-1ge16gw", "allwinner,sun50i-a64";
++};
++
++&mmc2 {
++	mmc-hs200-1_8v;
++	allwinner,drive-data-phase = <180>;
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts
 new file mode 100644
-index 000000000000..d9716e7e096a
+index 000000000..e4125f152
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts
-@@ -0,0 +1,98 @@
+@@ -0,0 +1,97 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -419,6 +425,7 @@ index 000000000000..d9716e7e096a
 +
 +/ {
 +	model = "Olimex A64-Olinuxino-1Ge4GW";
++	compatible = "olimex,a64-olinuxino-1ge4gw", "allwinner,sun50i-a64";
 +
 +	aliases {
 +		ethernet1 = &rtl8723bs;
@@ -481,8 +488,6 @@ index 000000000000..d9716e7e096a
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
-+	mmc-hs200-1_8v;
-+	allwinner,drive-data-phase = <180>;
 +	status = "okay";
 +};
 +
@@ -507,7 +512,7 @@ index 000000000000..d9716e7e096a
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts
 new file mode 100644
-index 000000000000..9c8633971fca
+index 000000000..5b85f4d2b
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Gs16M.dts
 @@ -0,0 +1,31 @@
@@ -523,11 +528,11 @@ index 000000000000..9c8633971fca
 +
 +/ {
 +	model = "Olimex A64-Olinuxino-1Gs16M";
++	compatible = "olimex,a64-olinuxino-1gs16m", "allwinner,sun50i-a64";
 +
 +	aliases {
 +		spi0 = &spi0;
 +	};
-+
 +};
 +
 +&spi0 {
@@ -544,10 +549,10 @@ index 000000000000..9c8633971fca
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts
 new file mode 100644
-index 000000000000..86890d8818e4
+index 000000000..0d927685e
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts
-@@ -0,0 +1,26 @@
+@@ -0,0 +1,25 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -560,6 +565,7 @@ index 000000000000..86890d8818e4
 +
 +/ {
 +	model = "Olimex A64-Olinuxino-2Ge8G-IND";
++	compatible = "olimex,a64-olinuxino-2ge8g", "allwinner,sun50i-a64";
 +};
 +
 +&mmc2 {
@@ -570,7 +576,5 @@ index 000000000000..86890d8818e4
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
-+	mmc-hs200-1_8v;
-+	allwinner,drive-data-phase = <180>;
 +	status = "okay";
 +};

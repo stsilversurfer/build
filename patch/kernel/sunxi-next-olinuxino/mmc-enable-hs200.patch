@@ -1,0 +1,111 @@
+diff --git a/drivers/mmc/host/sunxi-mmc.c b/drivers/mmc/host/sunxi-mmc.c
+index 282225257..846d1829b 100644
+--- a/drivers/mmc/host/sunxi-mmc.c
++++ b/drivers/mmc/host/sunxi-mmc.c
+@@ -303,6 +303,7 @@ struct sunxi_mmc_host {
+ 
+ 	/* timings */
+ 	bool		use_new_timings;
++	u32		drive_dat_phase;
+ };
+ 
+ static int sunxi_mmc_reset_host(struct sunxi_mmc_host *host)
+@@ -838,14 +839,31 @@ static int sunxi_mmc_clk_set_rate(struct sunxi_mmc_host *host,
+ 		mmc_writel(host, REG_SD_NTSR, rval);
+ 	}
+ 
++	rval = mmc_readl(host, REG_DRV_DL);
++	rval &= ~BIT(17);
++	/*
++	 * Drive data phase can be set to 180 only if the timing
++	 * is not in DDR mode.
++	*/
++	if (ios->timing != MMC_TIMING_UHS_DDR50 &&
++	    ios->timing != MMC_TIMING_MMC_DDR52)
++		rval |= (host->drive_dat_phase == 180 ) << 17;
++	mmc_writel(host, REG_DRV_DL, rval);
++
+ 	/* sunxi_mmc_clk_set_phase expects the actual card clock rate */
+ 	ret = sunxi_mmc_clk_set_phase(host, ios, rate);
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = sunxi_mmc_calibrate(host, SDXC_REG_SAMP_DL_REG);
+-	if (ret)
+-		return ret;
++	/*
++	 * In HS200 and HS400 execute_tuning() is called.
++	 * Tunning value shouldn't be changed.
++	 */
++	if (ios->timing < MMC_TIMING_MMC_HS200) {
++		ret = sunxi_mmc_calibrate(host, SDXC_REG_SAMP_DL_REG);
++		if (ret)
++			return ret;
++	}
+ 
+ 	/*
+ 	 * FIXME:
+@@ -953,6 +971,41 @@ static void sunxi_mmc_set_ios(struct mmc_host *mmc, struct mmc_ios *ios)
+ 	sunxi_mmc_set_clk(host, ios);
+ }
+ 
++static int sunxi_mmc_execute_tuning(struct mmc_host *mmc, u32 opcode)
++{
++	struct sunxi_mmc_host *host = mmc_priv(mmc);
++	u8 min, max;
++	u8 val;
++
++	min = 0;
++	while (min < 64) {
++		writel(SDXC_CAL_DL_SW_EN | (min & SDXC_CAL_DL_MASK),
++		       host->reg_base + SDXC_REG_SAMP_DL_REG);
++		if (!mmc_send_tuning(mmc, opcode, NULL))
++			break;
++		min++;
++	}
++
++	max = min + 1;
++	while (max < 64) {
++		writel(SDXC_CAL_DL_SW_EN | (max & SDXC_CAL_DL_MASK),
++		       host->reg_base + SDXC_REG_SAMP_DL_REG);
++		if (mmc_send_tuning(mmc, opcode, NULL)) {
++			max--;
++			break;
++		}
++		max++;
++	}
++
++	/* set value in the middle of the valid range */
++	val = min + ((max - min) / 2);
++	writel(SDXC_CAL_DL_SW_EN | (val & SDXC_CAL_DL_MASK),
++	       host->reg_base + SDXC_REG_SAMP_DL_REG);
++
++	return mmc_send_tuning(mmc, opcode, NULL);
++}
++
++
+ static int sunxi_mmc_volt_switch(struct mmc_host *mmc, struct mmc_ios *ios)
+ {
+ 	/* vqmmc regulator is available */
+@@ -1113,6 +1166,7 @@ static const struct mmc_host_ops sunxi_mmc_ops = {
+ 	.start_signal_voltage_switch = sunxi_mmc_volt_switch,
+ 	.hw_reset	 = sunxi_mmc_hw_reset,
+ 	.card_busy	 = sunxi_mmc_card_busy,
++	.execute_tuning	 = sunxi_mmc_execute_tuning,
+ };
+ 
+ static const struct sunxi_mmc_clk_delay sunxi_mmc_clk_delays[] = {
+@@ -1417,6 +1471,13 @@ static int sunxi_mmc_probe(struct platform_device *pdev)
+ 	if (ret)
+ 		goto error_free_dma;
+ 
++	ret = of_property_read_u32(pdev->dev.of_node,
++				   "allwinner,drive-data-phase",
++				   &host->drive_dat_phase);
++	if (ret || host->drive_dat_phase != 180)
++		host->drive_dat_phase = 90;
++
++
+ 	/*
+ 	 * If we don't support delay chains in the SoC, we can't use any
+ 	 * of the higher speed modes. Mask them out in case the device

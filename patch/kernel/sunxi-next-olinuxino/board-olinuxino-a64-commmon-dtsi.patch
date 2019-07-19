@@ -406,7 +406,7 @@ new file mode 100644
 index 000000000000..d9716e7e096a
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts
-@@ -0,0 +1,96 @@
+@@ -0,0 +1,98 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -481,6 +481,8 @@ index 000000000000..d9716e7e096a
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
++	mmc-hs200-1_8v;
++	allwinner,drive-data-phase = <180>;
 +	status = "okay";
 +};
 +
@@ -545,7 +547,7 @@ new file mode 100644
 index 000000000000..86890d8818e4
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts
-@@ -0,0 +1,24 @@
+@@ -0,0 +1,26 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -568,5 +570,7 @@ index 000000000000..86890d8818e4
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
++	mmc-hs200-1_8v;
++	allwinner,drive-data-phase = <180>;
 +	status = "okay";
 +};

@@ -384,10 +384,10 @@ index 000000000..d48ed65de
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge16GW.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge16GW.dts
 new file mode 100644
-index 000000000..ba8aafeda
+index 000000000..a508d77d2
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge16GW.dts
-@@ -0,0 +1,19 @@
+@@ -0,0 +1,20 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (C) 2019 OLIMEX Ltd.
@@ -404,12 +404,13 @@ index 000000000..ba8aafeda
 +};
 +
 +&mmc2 {
++	vqmmc-supply = <&reg_eldo1>;
 +	mmc-hs200-1_8v;
 +	allwinner,drive-data-phase = <180>;
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts
 new file mode 100644
-index 000000000..e4125f152
+index 000000000..c87ecc6e1
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-1Ge4GW.dts
 @@ -0,0 +1,97 @@
@@ -484,7 +485,7 @@ index 000000000..e4125f152
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&mmc2_pins>;
 +	vmmc-supply = <&reg_dcdc1>;
-+	vqmmc-supply = <&reg_eldo1>;
++	vqmmc-supply = <&reg_dcdc1>;
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
@@ -549,7 +550,7 @@ index 000000000..5b85f4d2b
 +};
 diff --git a/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts
 new file mode 100644
-index 000000000..0d927685e
+index 000000000..3583c37d3
 --- /dev/null
 +++ b/arch/arm64/boot/dts/allwinner/sun50i-a64-olinuxino-2Ge8G.dts
 @@ -0,0 +1,25 @@
@@ -572,7 +573,7 @@ index 000000000..0d927685e
 +	pinctrl-names = "default";
 +	pinctrl-0 = <&mmc2_pins>;
 +	vmmc-supply = <&reg_dcdc1>;
-+	vqmmc-supply = <&reg_eldo1>;
++	vqmmc-supply = <&reg_dcdc1>;
 +	bus-width = <8>;
 +	non-removable;
 +	cap-mmc-hw-reset;
